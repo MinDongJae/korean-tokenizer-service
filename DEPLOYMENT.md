@@ -2,6 +2,30 @@
 
 kiwipiepy 기반 한국어 형태소 분석 API 서비스
 
+## 현재 배포 상태 (2025-12-07)
+
+| 항목 | 상태 |
+|------|------|
+| **운영 URL** | `https://korean-tokenizer-service.onrender.com` |
+| **플랫폼** | Render.com (Docker) |
+| **상태** | ✅ 정상 운영 중 |
+| **버전** | 1.0.0 |
+| **kiwipiepy** | 0.17.1 |
+
+### 검증된 테스트 결과
+
+```bash
+# Health Check
+curl https://korean-tokenizer-service.onrender.com/health
+# {"status":"healthy","version":"1.0.0","kiwi_version":"0.17.1"}
+
+# Tokenization Test
+curl -X POST https://korean-tokenizer-service.onrender.com/tokenize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "금선물의 거래단위는 무엇입니까?", "filter_stopwords": true}'
+# {"tokens": ["금", "선물", "거래", "단위", "무엇", "이"], ...}
+```
+
 ## 아키텍처
 
 ```
@@ -23,7 +47,7 @@ kiwipiepy 기반 한국어 형태소 분석 API 서비스
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Railway Cloud (Python)                        │
+│                    Render.com (Docker)                           │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │   FastAPI + kiwipiepy                                     │   │
@@ -32,61 +56,46 @@ kiwipiepy 기반 한국어 형태소 분석 API 서비스
 │  │   - GET  /health         헬스체크                         │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
-│  URL: https://korean-tokenizer-production.up.railway.app         │
+│  URL: https://korean-tokenizer-service.onrender.com              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## 현재 상태
+## 재배포 방법
 
-- **코드**: 완성됨 (`tokenizer-service/` 디렉토리)
-- **배포**: Railway에 배포 필요
+### 옵션 A: Render.com (현재 운영 중, 권장)
 
-## 배포 방법
+**GitHub Repository**: https://github.com/MinDongJae/korean-tokenizer-service
 
-### 옵션 A: Railway CLI (권장)
+1. **Render.com 대시보드 접속**
+   - https://dashboard.render.com
 
-1. **Railway CLI 설치**
-   ```bash
-   npm install -g @railway/cli
+2. **수동 배포 트리거** (코드 변경 시)
+   - Services → korean-tokenizer → Manual Deploy → Deploy latest commit
+
+3. **자동 배포 설정**
+   - `render.yaml`에 `autoDeploy: true` 설정되어 있음
+   - GitHub push 시 자동 배포
+
+### 옵션 B: 새 Render 프로젝트 생성
+
+1. https://dashboard.render.com → **New** → **Web Service**
+
+2. **GitHub 연결**
+   - Repository: `MinDongJae/korean-tokenizer-service`
+   - Branch: `master`
+
+3. **빌드 설정**
+   - Runtime: Docker
+   - Dockerfile Path: `./Dockerfile`
+   - Docker Context: `.`
+
+4. **환경 변수**
+   ```
+   PORT=8080
    ```
 
-2. **로그인** (브라우저 인증 필요)
-   ```bash
-   railway login
-   ```
-
-3. **프로젝트 연결 또는 생성**
-   ```bash
-   cd tokenizer-service
-   railway init
-   # 또는 기존 프로젝트 연결:
-   railway link
-   ```
-
-4. **배포**
-   ```bash
-   railway up
-   ```
-
-5. **도메인 확인**
-   ```bash
-   railway domain
-   ```
-
-### 옵션 B: Railway Dashboard (GUI)
-
-1. https://railway.app 접속 및 로그인
-
-2. **New Project** → **Deploy from GitHub repo** 선택
-   - 또는 **Empty Project** → **Add Service** → **GitHub Repo**
-
-3. 이 저장소의 `tokenizer-service/` 디렉토리 선택
-
-4. Railway가 자동으로 `Dockerfile` 감지하여 빌드
-
-5. **Settings** → **Networking** → **Generate Domain** 클릭
-
-6. 생성된 URL 확인 (예: `korean-tokenizer-production.up.railway.app`)
+5. **Health Check 설정**
+   - Path: `/health`
 
 ### 옵션 C: 로컬 Docker 테스트
 
